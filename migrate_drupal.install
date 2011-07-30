@@ -1,0 +1,41 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Drupal migration module installation
+ */
+
+function migrate_drupal_schema() {
+  $schema = array();
+  $schema['migrate_drupal'] = migrate_drupal_schema_drupal();
+  return $schema;
+}
+
+function migrate_drupal_schema_drupal() {
+  return array(
+    'description' => 'Mapping of machine name to filename for WordPress migrations',
+    'fields' => array(
+      'endpoint' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'Base URL of the REST services',
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'User ID of the account initiating the import',
+      ),
+      'token' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Authentication token on remote site',
+      ),
+    ),
+    'primary key' => array('endpoint'),
+  );
+}

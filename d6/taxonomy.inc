@@ -25,8 +25,30 @@ class DrupalTerm6Migration extends DrupalTermMigration {
              ->condition('vid', explode(',', $this->sourceVocabulary), 'IN')
              ->orderBy('parent')
              ->distinct();
+    // Join to the hierarchy so we can sort on parent, but we'll pull the
+    // actual parent values in separately in case there are multiples.
     $query->leftJoin('term_hierarchy', 'th', 'td.tid=th.tid');
-    $query->fields('th', array('parent'));
     return $query;
+  }
+
+  /**
+   * Implementation of Migration::prepareRow().
+   *
+   * @param $row
+   */
+  public function prepareRow($row) {
+    if (parent::prepareRow($row) === FALSE) {
+      return FALSE;
+    }
+
+    // Add the (potentially multiple) parents
+    $result = Database::getConnection('default', $this->sourceConnection)
+              ->select('term_hierarchy', 'th')
+              ->fields('th', array('parent'))
+              ->condition('tid', $row->tid)
+              ->execute();
+    foreach ($result as $parent_row) {
+      $row->parent[] = $parent_row->parent;
+    }
   }
 }

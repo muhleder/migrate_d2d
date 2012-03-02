@@ -1,5 +1,5 @@
-name = "Drupal-to-Drupal migration"
-description = "Migration from one Drupal site to another"
+name = "Drupal-to-Drupal CSV migration"
+description = "Migration from one Drupal site to another, using migration mappings provided by CSV files"
 package = "Development"
 core = 7.x
 

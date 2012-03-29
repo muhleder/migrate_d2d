@@ -13,6 +13,12 @@ files[] = node.inc
 files[] = taxonomy.inc
 files[] = user.inc
 
+; D5 implementations
+files[] = d5/d5.inc
+files[] = d5/node.inc
+files[] = d5/taxonomy.inc
+files[] = d5/user.inc
+
 ; D6 implementations
 files[] = d6/d6.inc
 files[] = d6/node.inc

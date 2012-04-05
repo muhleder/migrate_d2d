@@ -148,4 +148,19 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       $row->{$term_row->vid}[] = $term_row->tid;
     }
   }
+
+  /**
+   * Translate the fid into the file path MigrateFileFieldHandler expects.
+   * The path to the D6 instance must be passed in separately as source_path.
+   * @see MigrateFileFieldHandler::arguments()
+   */
+  public function handle_type_filefield($fid) {
+    $filepath = Database::getConnection('default', $this->sourceConnection)
+      ->select('files', 'f')
+      ->fields('f', array('filepath'))
+      ->condition('fid', $fid)
+      ->execute()
+      ->fetchField();
+    return $filepath;
+  }
 }

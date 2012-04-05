@@ -12,6 +12,8 @@ files[] = migrate_d2d.migrate.inc
 files[] = node.inc
 files[] = taxonomy.inc
 files[] = user.inc
+files[] = menu.inc
+files[] = menu_links.inc
 
 ; D5 implementations
 files[] = d5/d5.inc
@@ -24,6 +26,8 @@ files[] = d6/d6.inc
 files[] = d6/node.inc
 files[] = d6/taxonomy.inc
 files[] = d6/user.inc
+files[] = d6/menu.inc
+files[] = d6/menu_links.inc
 
 ; D7 implementations
 files[] = d7/d7.inc
@@ -31,3 +35,5 @@ files[] = d7/d7.inc
 ;files[] = d7/node.inc
 files[] = d7/taxonomy.inc
 files[] = d7/user.inc
+;files[] = d7/menu.inc
+;files[] = d7/menu_links.inc

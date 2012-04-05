@@ -3,12 +3,12 @@ Drupal-to-Drupal migration
 
 This is a framework based on the Migrate API to ease building migrations
 from one Drupal site to another. It is only supported at this time on Drupal 7
-(i.e., Drupal 7 is the only destination). Only Drupal 6 is semi-fully-supported
-as a source at this time, although some Drupal 7 support is sketched out - it
-should be fairly straight-forward to flesh out the Drupal 7 support and add
-Drupal 5 support. Besides addressing contemporary needs to migrate to Drupal 7,
-it is intended to help serve as a proof-of-concept for incorporating the
-migration approach into core as an upgrade path (http://drupal.org/node/1052692).
+(i.e., Drupal 7 is the only destination). Only Drupal 5 and 6 are semi-fully-supported
+as sources at this time, although some Drupal 7 support is sketched out - it
+should be fairly straight-forward to flesh out the Drupal 7 support. Besides
+addressing contemporary needs to migrate to Drupal 7, it is intended to help
+serve as a proof-of-concept for incorporating the migration approach into core
+as an upgrade path (http://drupal.org/node/1052692).
 
 migrate_d2d
 ===========

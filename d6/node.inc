@@ -52,19 +52,20 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     $this->sourceFieldTypes = array();
 
     // Get each CCK field attached to this type.
-    $query = Database::getConnection('default', $this->sourceConnection)
-             ->select('content_node_field_instance', 'i')
-             ->fields('i', array('label'))
-             ->condition('i.type_name', $this->sourceType);
-    $query->innerJoin('content_node_field', 'f', 'i.field_name = f.field_name');
-    $query->fields('f', array('field_name', 'type'));
-    $result = $query->execute();
-    foreach ($result as $row) {
-      $fields[trim($row->field_name)] = t('!label (!type)',
-        array('!label' => $row->label, '!type' => $row->type));
-      $this->sourceFieldTypes[$row->field_name] = $row->type;
+    if (db_table_exists('content_node_field_instance')) {
+      $query = Database::getConnection('default', $this->sourceConnection)
+               ->select('content_node_field_instance', 'i')
+               ->fields('i', array('label'))
+               ->condition('i.type_name', $this->sourceType);
+      $query->innerJoin('content_node_field', 'f', 'i.field_name = f.field_name');
+      $query->fields('f', array('field_name', 'type'));
+      $result = $query->execute();
+      foreach ($result as $row) {
+        $fields[trim($row->field_name)] = t('!label (!type)',
+          array('!label' => $row->label, '!type' => $row->type));
+        $this->sourceFieldTypes[$row->field_name] = $row->type;
+      }
     }
-
     // Get each vocabulary attached to this type.
     $query = Database::getConnection('default', $this->sourceConnection)
              ->select('vocabulary_node_types', 'vnt')

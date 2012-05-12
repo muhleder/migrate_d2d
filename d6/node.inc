@@ -30,7 +30,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
   /**
    * Set up field mappings for cck fields
    */
-  protected function doFieldMappings($query) {
+  protected function doFieldMappings(&$query) {
     $destinationFields = $this->destination->fields();
 
     // Load up field data for dynamically mapped fields
@@ -100,8 +100,17 @@ class DrupalNode6Migration extends DrupalNodeMigration {
         }
       }
     }
+
   }
 
+
+  /**
+   * Process uploads
+   * @param $query
+   */
+  protected function doUploads(&$query) {
+
+  }
 
   /**
    * Query for basic node fields from Drupal 6.
@@ -118,6 +127,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     $query->innerJoin('node_revisions', 'nr', 'n.vid=nr.vid');
     $query->fields('nr', array('body', 'teaser', 'format'));
     $this->doFieldMappings($query);
+    $this->doUploads($query);
     return $query;
   }
 

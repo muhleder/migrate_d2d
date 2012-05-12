@@ -51,7 +51,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
           $tables = $query->getTables();
           $table = 'content_type_' . $this->sourceType;
           if (!$tables[$table]) {
-            $query->leftJoin($table, $table, $table.'.vid=n.vid');
+            $query->join($table, $table, $table.'.vid=n.vid');
           }
         } else {
           $query->leftJoin($table, $table, $table.'.vid=n.vid');

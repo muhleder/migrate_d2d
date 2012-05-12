@@ -32,7 +32,19 @@ class DrupalNode6Migration extends DrupalNodeMigration {
    * @param $query
    */
    protected function doTermMappings(&$query) {
-
+     // Get each vocabulary attached to this type.
+     $query = Database::getConnection('default', $this->sourceConnection)
+       ->select('vocabulary_node_types', 'vnt')
+       ->fields('vnt', array('vid'));
+     $query->innerJoin('vocabulary', 'v', 'vnt.vid=v.vid');
+     $query->addField('v', 'name');
+     $query->condition('vnt.type', $this->sourceType);
+     $result = $query->execute();
+     foreach ($result as $row) {
+       $fields[$row->vid] = t('!label (Taxonomy Term)',
+         array('!label' => $row->name));
+       $this->sourceFieldTypes[$row->vid] = 'taxonomy_term';
+     }
    }
 
   /**
@@ -195,19 +207,6 @@ class DrupalNode6Migration extends DrupalNodeMigration {
           array('!label' => $row->label, '!type' => $row->type));
         $this->sourceFieldTypes[$row->field_name] = $row->type;
       }
-    }
-    // Get each vocabulary attached to this type.
-    $query = Database::getConnection('default', $this->sourceConnection)
-             ->select('vocabulary_node_types', 'vnt')
-             ->fields('vnt', array('vid'));
-    $query->innerJoin('vocabulary', 'v', 'vnt.vid=v.vid');
-    $query->addField('v', 'name');
-    $query->condition('vnt.type', $this->sourceType);
-    $result = $query->execute();
-    foreach ($result as $row) {
-      $fields[$row->vid] = t('!label (Taxonomy Term)',
-                             array('!label' => $row->name));
-      $this->sourceFieldTypes[$row->vid] = 'taxonomy_term';
     }
     migrate_instrument_stop('DrupalNode6Migration::sourceFieldList');
     return $fields;

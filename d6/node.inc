@@ -40,10 +40,15 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       // content_$field_name.
       // TODO: Handle multi-value fields
       $table = "content_$field_name";
+      // Join to table
       if (!Database::getConnection('default', $this->sourceConnection)
         ->schema()->tableExists($table)) {
         $table = 'content_type_' . $this->sourceType;
+        $query->leftJoin($table, $table, $table.'.vid=n.vid');
+      } else {
+        $query->leftJoin($table, $table, $table.'.vid=n.vid');
       }
+
       if (isset($this->fieldSuffixes[$field_type])) {
         $suffix = $this->fieldSuffixes[$field_type];
         $field_field = $field_name .'_'. $suffix;
@@ -51,8 +56,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
         $field_format = $field_name .':format';
         $field_language = $field_name .':language';
 
-        // Join to table and select value field
-        $query->leftJoin($table, $table, $table.'.vid=n.vid');
+        // Select value field
         $query->fields($table, array($field_field));
         // Add field mappings, and select any data fields
         switch($field_type) {

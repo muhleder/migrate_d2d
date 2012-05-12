@@ -28,20 +28,26 @@ class DrupalNode6Migration extends DrupalNodeMigration {
 
 
   /**
+   * Set up taxonomy mappings for the node
+   * @param $query
+   */
+   protected function doTermMappings(&$query) {
+
+   }
+
+  /**
    * Set up field mappings for cck fields
+   * @param $query
    */
   protected function doFieldMappings(&$query) {
     $destinationFields = $this->destination->fields();
     $node_info = entity_get_property_info('node');
     $content_type_properties = $node_info['bundles'][$this->sourceType]['properties'];
 
-
-
     // Load up field data for dynamically mapped fields
     foreach ($this->sourceFieldTypes as $field_name => $field_type) {
       $destinationFieldType = $content_type_properties[$field_type]['type'];
       // TODO: Handle multi-value fields
-
 
       if (isset($this->fieldSuffixes[$field_type])) {
         // Join to table
@@ -120,11 +126,9 @@ class DrupalNode6Migration extends DrupalNodeMigration {
 
             break;
           default:
-
         }
       }
     }
-
   }
 
 
@@ -218,7 +222,6 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       return FALSE;
     }
 
-
     foreach($this->sourceFieldTypes as $field_name => $type) {
       // Some fields will need translation (e.g., from a text string to a boolean)
       $method = "handle_$field_name";
@@ -233,8 +236,6 @@ class DrupalNode6Migration extends DrupalNodeMigration {
         $row->{$field_name .'title'} = $data['title'];
       }
     }
-
-
 
     // And. load up the data for taxonomy terms
     $query = Database::getConnection('default', $this->sourceConnection)

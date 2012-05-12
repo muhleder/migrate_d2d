@@ -72,10 +72,10 @@ abstract class DrupalNodeMigration extends DrupalMigration {
 
     // Create our three main objects - source, destination, and map
 
+    $this->destination = new MigrateDestinationNode($this->destinationType);
+
     $this->source = new MigrateSourceSQL($this->nodeQuery(), $fields, NULL,
       $this->sourceOptions);
-
-    $this->destination = new MigrateDestinationNode($this->destinationType);
 
     $this->map = new MigrateSQLMap($this->machineName,
       array(

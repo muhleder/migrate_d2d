@@ -30,12 +30,19 @@ abstract class DrupalNodeMigration extends DrupalMigration {
    */
   protected $query;
 
-  /**
+   /**
    * Mapping of each source CCK field to its type.
    *
    * @var array
    */
   protected $sourceFieldTypes = array();
+
+  /**
+   * Mapping of each source vocabulary id to the destination vocab machine name.
+   *
+   * @var array
+   */
+  protected $vocabMap = array();
 
   /**
    * Mapping of database column name suffixes for each field type. Derived

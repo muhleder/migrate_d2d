@@ -74,9 +74,20 @@ class DrupalNode6Migration extends DrupalNodeMigration {
               $this->addFieldMapping($field_name, $field_field);
               $this->addFieldMapping($field_name.':file_class')
                 ->defaultValue('MigrateFileFid');
-              // We register alt and title here and will set them in $this->prepareRow()
-              $this->addFieldMapping($field_name .':alt')->defaultValue('');
-              $this->addFieldMapping($field_name .':title')->defaultValue('');
+              // Deal with alt and title, we will set them in $this->prepareRow()
+              if ($destinationFields[$field_name .':alt']) {
+                $this->addFieldMapping($field_name .':alt')->defaultValue('');
+                $this->addFieldMapping($field_name .':title')->defaultValue('');
+              }
+              // Deal with description and display if they exist
+              if ($destinationFields[$field_name .':description']) {
+                $query->fields($table, array(
+                  $field_name .'_description',
+                  $field_name .'_list',
+                ));
+                $this->addFieldMapping($field_name .':description', $field_name .'_description');
+                $this->addFieldMapping($field_name .':display', $field_name .'_list');
+              }
               // TODO Can files have a language in D6?
               $this->addUnmigratedDestinations(array($field_language));
             break;
@@ -216,7 +227,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
         $this->$method($row->{$field_name .'_value'});
       }
       // Set alt and title for filefields
-      if ($type == 'filefield') {
+      if ($type == 'filefield' && $row->{$field_name .'_data'}) {
         $data = unserialize($row->{$field_name .'_data'});
         $row->{$field_name .':alt'} = $data['alt'];
         $row->{$field_name .'title'} = $data['title'];

@@ -26,6 +26,11 @@ abstract class DrupalNodeMigration extends DrupalMigration {
   protected $destinationType;
 
   /**
+   * The query object, we may need access to this from the final implementation of the class.
+   */
+  protected $query;
+
+  /**
    * Mapping of each source CCK field to its type.
    *
    * @var array
@@ -74,7 +79,9 @@ abstract class DrupalNodeMigration extends DrupalMigration {
 
     $this->destination = new MigrateDestinationNode($this->destinationType);
 
-    $this->source = new MigrateSourceSQL($this->nodeQuery(), $fields, NULL,
+    $this->query = $this->nodeQuery();
+
+    $this->source = new MigrateSourceSQL($this->query, $fields, NULL,
       $this->sourceOptions);
 
     $this->map = new MigrateSQLMap($this->machineName,

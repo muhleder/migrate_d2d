@@ -95,6 +95,7 @@ function migrate_d2d_example_register_migrations() {
   // set up the dependency and resolve D6->D7 uids.
   $common_node_arguments = $common_arguments + array(
     'user_migration' => 'User',
+    'taxonomy_info' => $vocabulary_arguments,
   );
   foreach ($node_arguments as $arguments) {
     $arguments = array_merge_recursive($arguments, $common_node_arguments);

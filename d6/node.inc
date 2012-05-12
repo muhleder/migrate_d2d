@@ -32,6 +32,10 @@ class DrupalNode6Migration extends DrupalNodeMigration {
    */
   protected function doFieldMappings(&$query) {
     $destinationFields = $this->destination->fields();
+    $node_info = entity_get_property_info('node');
+    $content_type_properties = $node_info['bundles'][$this->sourceType]['properties'];
+
+
 
     // Load up field data for dynamically mapped fields
     foreach ($this->sourceFieldTypes as $field_name => $field_type) {
@@ -210,7 +214,13 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     }
 
     // Set alt and title for filefields
-
+    foreach($this->sourceFieldTypes as $field_name => $type) {
+      if ($type == 'filefield') {
+        $data = unserialize($row->{$field_name .'_data'});
+        $row->{$field_name .':alt'} = $data['alt'];
+        $row->{$field_name .'title'} = $data['title'];
+      }
+    }
 
     // And. load up the data for taxonomy terms
     $query = Database::getConnection('default', $this->sourceConnection)

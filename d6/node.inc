@@ -39,14 +39,12 @@ class DrupalNode6Migration extends DrupalNodeMigration {
 
     // Load up field data for dynamically mapped fields
     foreach ($this->sourceFieldTypes as $field_name => $field_type) {
-      // Find the data. Simple unshared unmultiple fields will be in
-      // content_type_{$this->sourceType}. Others will be in
-      // content_$field_name.
       // TODO: Handle multi-value fields
-      $table = "content_$field_name";
+
 
       if (isset($this->fieldSuffixes[$field_type])) {
         // Join to table
+        $table = "content_$field_name";
         if (!Database::getConnection('default', $this->sourceConnection)
           ->schema()->tableExists($table)) {
           $tables = $query->getTables();

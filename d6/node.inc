@@ -39,6 +39,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
 
     // Load up field data for dynamically mapped fields
     foreach ($this->sourceFieldTypes as $field_name => $field_type) {
+      $destinationFieldType = $content_type_properties[$field_type]['type'];
       // TODO: Handle multi-value fields
 
 
@@ -109,11 +110,6 @@ class DrupalNode6Migration extends DrupalNodeMigration {
             break;
           default:
 
-        }
-        // Some fields will need translation (e.g., from a text string to a boolean)
-        $method = "handle_$field_name";
-        if (method_exists($this, $method)) {
-          $row->$field_name = $this->$method($row->$field_name);
         }
       }
     }
@@ -211,14 +207,23 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       return FALSE;
     }
 
-    // Set alt and title for filefields
+
     foreach($this->sourceFieldTypes as $field_name => $type) {
+      // Some fields will need translation (e.g., from a text string to a boolean)
+      $method = "handle_$field_name";
+      if (method_exists($this, $method)) {
+        // Pass by reference
+        $this->$method($row->{$field_name .'_value'});
+      }
+      // Set alt and title for filefields
       if ($type == 'filefield') {
         $data = unserialize($row->{$field_name .'_data'});
         $row->{$field_name .':alt'} = $data['alt'];
         $row->{$field_name .'title'} = $data['title'];
       }
     }
+
+
 
     // And. load up the data for taxonomy terms
     $query = Database::getConnection('default', $this->sourceConnection)

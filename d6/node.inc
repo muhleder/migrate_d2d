@@ -51,19 +51,26 @@ class DrupalNode6Migration extends DrupalNodeMigration {
         $field_format = $field_name .':format';
         $field_language = $field_name .':language';
 
+        // Join to table and select value field
         $query->leftJoin($table, $table, $table.'.vid=n.vid');
         $query->fields($table, array($field_field));
+        // Add field mappings, and select any data fields
         switch($field_type) {
           case 'file':
           case 'filefield':
+              $query->fields($table, array($field_name .'_data'));
               $this->addFieldMapping($field_name, $field_field);
               $this->addFieldMapping($field_name.':file_class')
                 ->defaultValue('MigrateFileFid');
+              // We register alt and title here and will set them in $this->prepareRow()
+              $this->addFieldMapping($field_name .':alt')->defaultValue('');
+              $this->addFieldMapping($field_name .':title')->defaultValue('');
+              // TODO Can files have a language in D6?
+              $this->addUnmigratedDestinations(array($field_language));
             break;
           case 'text_long':
           case 'text':
             // Value
-            $query->fields($table, array($field_field));
             $this->addFieldMapping($field_name, $field_field);
             // Format
             if (isset($destinationFields[$field_format])) {
@@ -84,7 +91,6 @@ class DrupalNode6Migration extends DrupalNodeMigration {
           case 'number_integer':
           case 'number_float':
           case 'date':
-            $query->fields($table, array($field_field));
             $this->addFieldMapping($field_name, $field_field);
             break;
           case 'link':
@@ -109,7 +115,19 @@ class DrupalNode6Migration extends DrupalNodeMigration {
    * @param $query
    */
   protected function doUploads(&$query) {
-
+    $query->leftJoin('upload', 'u', 'u.vid=n.vid');
+    $query->fields('u', array(
+      'fid',
+      'description',
+      'list',
+      'weight',
+    ));
+    $this->addFieldMapping('upload', 'fid');
+    $this->addFieldMapping('upload:file_class')
+      ->defaultValue('MigrateFileFid');
+    $this->addFieldMapping('upload:description', 'description');
+    $this->addFieldMapping('upload:display', 'list');
+    $this->addUnmigratedDestinations(array('upload:language',));
   }
 
   /**
@@ -181,6 +199,8 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     if (parent::prepareRow($row) === FALSE) {
       return FALSE;
     }
+
+    // Set alt and title for filefields
 
 
     // And. load up the data for taxonomy terms

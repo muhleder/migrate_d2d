@@ -8,8 +8,6 @@ class DrupalNode6Migration extends DrupalNodeMigration {
    * @param array $arguments
    */
   public function __construct(array $arguments) {
-    parent::__construct($arguments);
-
     // Basic CCK field suffixes
     $this->fieldSuffixes = array(
       'computed' => 'value',
@@ -18,11 +16,92 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       'datetime' => 'value',
       'number_decimal' => 'value',
       'number_integer' => 'value',
+      'number_float' => 'value',
       'text' => 'value',
       'filefield' => 'fid', // @todo: Handle list and data suffixes
+      'file' => 'fid',
       'nodereference' => 'nid',
     );
+
+    parent::__construct($arguments);
   }
+
+
+  /**
+   * Set up field mappings for cck fields
+   */
+  protected function doFieldMappings($query) {
+    $destinationFields = $this->destination->fields();
+
+    // Load up field data for dynamically mapped fields
+    foreach ($this->sourceFieldTypes as $field_name => $field_type) {
+      // Find the data. Simple unshared unmultiple fields will be in
+      // content_type_{$this->sourceType}. Others will be in
+      // content_$field_name.
+      // TODO: Handle multi-value fields
+      $table = "content_$field_name";
+      if (!Database::getConnection('default', $this->sourceConnection)
+        ->schema()->tableExists($table)) {
+        $table = 'content_type_' . $this->sourceType;
+      }
+      if (isset($this->fieldSuffixes[$field_type])) {
+        $suffix = $this->fieldSuffixes[$field_type];
+        $field_field = $field_name .'_'. $suffix;
+        $field_field_format = $field_name .'_format';
+        $field_format = $field_name .':format';
+        $field_language = $field_name .':language';
+
+        $query->leftJoin($table, $table, $table.'.vid=n.vid');
+        $query->fields($table, array($field_field));
+        switch($field_type) {
+          case 'file':
+          case 'filefield':
+              $this->addFieldMapping($field_name, $field_field);
+              $this->addFieldMapping($field_name.':file_class')
+                ->defaultValue('MigrateFileFid');
+            break;
+          case 'text_long':
+          case 'text':
+            // Value
+            $query->fields($table, array($field_field));
+            $this->addFieldMapping($field_name, $field_field);
+            // Format
+            if (isset($destinationFields[$field_format])) {
+              if (Database::getConnection('default', $this->sourceConnection)
+                  ->schema()
+                  ->fieldExists($table, $field_field_format)) {
+                $query->fields($table, array($field_field_format));
+                $this->addFieldMapping($field_format, $field_field_format);
+              } else {
+                $this->addUnmigratedDestinations(array($field_format));
+              }
+            }
+            // Language @TODO
+            if (isset($destinationFields[$field_language])) {
+              $this->addUnmigratedDestinations(array($field_language));
+            }
+            break;
+          case 'number_integer':
+          case 'number_float':
+          case 'date':
+            $query->fields($table, array($field_field));
+            $this->addFieldMapping($field_name, $field_field);
+            break;
+          case 'link':
+
+            break;
+          default:
+
+        }
+        // Some fields will need translation (e.g., from a text string to a boolean)
+        $method = "handle_$field_name";
+        if (method_exists($this, $method)) {
+          $row->$field_name = $this->$method($row->$field_name);
+        }
+      }
+    }
+  }
+
 
   /**
    * Query for basic node fields from Drupal 6.
@@ -38,6 +117,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
              ->condition('type', $this->sourceType);
     $query->innerJoin('node_revisions', 'nr', 'n.vid=nr.vid');
     $query->fields('nr', array('body', 'teaser', 'format'));
+    $this->doFieldMappings($query);
     return $query;
   }
 
@@ -92,49 +172,6 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       return FALSE;
     }
 
-    // Load up field data for dynamically mapped fields
-    foreach ($this->sourceFieldTypes as $field_name => $field_type) {
-      // Find the data. Simple unshared unmultiple fields will be in
-      // content_type_{$this->sourceType}. Others will be in
-      // content_$field_name.
-      // TODO: Handle multi-value fields
-      $table = "content_$field_name";
-      if (!Database::getConnection('default', $this->sourceConnection)
-          ->schema()->tableExists($table)) {
-        $table = 'content_type_' . $this->sourceType;
-      }
-      if (isset($this->fieldSuffixes[$field_type])) {
-        $suffix = $this->fieldSuffixes[$field_type];
-        $field_field = $field_name .'_'. $suffix;
-        $row->$field_name = Database::getConnection('default', $this->sourceConnection)
-                            ->select($table, 'f')
-                            ->fields('f', array($field_field))
-                            ->condition('vid', $row->vid)
-                            ->execute()
-                            ->fetchField();
-        // Allow for field-type translation
-        $method = "handle_type_$field_type";
-        if (method_exists($this, $method)) {
-          $row->$field_name = $this->$method($row->$field_name);
-        }
-        // Some fields will need translation (e.g., from a text string to a boolean)
-        $method = "handle_$field_name";
-        if (method_exists($this, $method)) {
-          $row->$field_name = $this->$method($row->$field_name);
-        }
-      }
-      else if ($field_type != 'taxonomy_term') {
-        // Only report once per field type
-        static $reported_field_types = array();
-        if (!isset($reported_field_types[$field_type])) {
-          Migration::displayMessage("No suffix for field_type=$field_type");
-          $reported_field_types[$field_type] = TRUE;
-        }
-      }
-      if (!empty($field_name) && empty($row->$field_name)) {
-        unset($row->$field_name);
-      }
-    }
 
     // And. load up the data for taxonomy terms
     $query = Database::getConnection('default', $this->sourceConnection)

@@ -28,6 +28,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
 
   protected $vids = array();
   protected $destinationFields = array();
+  protected $multipleFields = array();
 
   /**
    * Set up taxonomy mappings for the node
@@ -127,7 +128,11 @@ class DrupalNode6Migration extends DrupalNodeMigration {
   protected function getCardinality($field_name) {
     $field_info = field_info_field_by_ids();
     $field_instance = field_info_instance('node', $field_name,  $this->sourceType);
-    return $field_info[$field_instance['field_id']]['cardinality'];
+    $cardinality = $field_info[$field_instance['field_id']]['cardinality'];
+    if ($cardinality !=1) {
+      $this->multipleFields[] = $field_name;
+    }
+    return $cardinality;
   }
 
   /**

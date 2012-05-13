@@ -30,7 +30,7 @@ abstract class DrupalUserMigration extends DrupalMigration {
     // Most mappings are straight-forward
     // @todo: Anything special to do with theme?
     $this->addSimpleMappings(array('pass', 'mail', 'theme', 'signature',
-      'created', 'access', 'login', 'status', 'language', 'init', 'timezone'));
+      'created', 'access', 'login', 'status', 'language', 'init', 'timezone', 'uid'));
     // user_save() expects the data field to be unpacked
     $this->addFieldMapping('data', 'data')
          ->callbacks('unserialize');

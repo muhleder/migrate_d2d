@@ -27,6 +27,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
   }
 
   protected $vids = array();
+  protected $destinationFields = array();
 
   /**
    * Set up taxonomy mappings for the node
@@ -61,15 +62,12 @@ class DrupalNode6Migration extends DrupalNodeMigration {
    * @param $query
    */
   protected function doFieldMappings(&$query) {
-    $destinationFields = $this->destination->fields();
+    $this->destinationFields = $this->destination->fields();
     $node_info = entity_get_property_info('node');
     $content_type_properties = $node_info['bundles'][$this->sourceType]['properties'];
 
     // Load up field data for dynamically mapped fields
     foreach ($this->sourceFieldTypes as $field_name => $field_type) {
-      $destinationFieldType = $content_type_properties[$field_type]['type'];
-      // TODO: Handle multi-value fields
-
       if (isset($this->fieldSuffixes[$field_type])) {
         // Join to table
         $table = "content_$field_name";
@@ -84,59 +82,24 @@ class DrupalNode6Migration extends DrupalNodeMigration {
           $query->leftJoin($table, $table, $table.'.vid=n.vid');
         }
 
-        // Set up field names
-        $suffix = $this->fieldSuffixes[$field_type];
-        $field_field = $field_name .'_'. $suffix;
-        $field_field_format = $field_name .'_format';
-        $field_format = $field_name .':format';
-        $field_language = $field_name .':language';
-
-        // Select value field
+        // Set up field names and select the field
+        $field_field = $field_name .'_'. $this->fieldSuffixes[$field_type];
         $query->fields($table, array($field_field));
+
         // Add field mappings, and select any data fields
         switch($field_type) {
           case 'file':
           case 'filefield':
-              $query->fields($table, array($field_name .'_data'));
-              $this->addFieldMapping($field_name, $field_field);
-              $this->addFieldMapping($field_name.':file_class')
-                ->defaultValue('MigrateFileFid');
-              // Deal with alt and title, we will set them in $this->prepareRow()
-              if ($destinationFields[$field_name .':alt']) {
-                $this->addFieldMapping($field_name .':alt')->defaultValue('');
-                $this->addFieldMapping($field_name .':title')->defaultValue('');
-              }
-              // Deal with description and display if they exist, we will set them in $this->prepareRow()
-              if ($destinationFields[$field_name .':description']) {
-                $this->addFieldMapping($field_name .':description')->defaultValue('');
-                $this->addFieldMapping($field_name .':display')->defaultValue('');
-              }
-              // TODO Can files have a language in D6?
-              $this->addUnmigratedDestinations(array($field_language));
+              $this->addFileFieldMapping($query, $table, $field_name, $field_field);
             break;
-          case 'text_long':
           case 'text':
-            // Value
-            $this->addFieldMapping($field_name, $field_field);
-            // Format
-            if (isset($destinationFields[$field_format])) {
-              if (Database::getConnection('default', $this->sourceConnection)
-                  ->schema()
-                  ->fieldExists($table, $field_field_format)) {
-                $query->fields($table, array($field_field_format));
-                $this->addFieldMapping($field_format, $field_field_format);
-              } else {
-                $this->addUnmigratedDestinations(array($field_format));
-              }
-            }
-            // Language @TODO
-            if (isset($destinationFields[$field_language])) {
-              $this->addUnmigratedDestinations(array($field_language));
-            }
+            $this->addTextFieldMapping($query, $table, $field_name, $field_field);
             break;
+          case 'number_decimal':
           case 'number_integer':
           case 'number_float':
           case 'date':
+          case 'datestamp':
             $this->addFieldMapping($field_name, $field_field);
             break;
           case 'link':
@@ -148,6 +111,53 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     }
   }
 
+
+  protected function addFileFieldMapping(&$query, $table, $field_name, $field_field) {
+    $query->fields($table, array($field_name .'_data'));
+    $this->addFieldMapping($field_name, $field_field);
+    $this->addFieldMapping($field_name.':file_class')
+      ->defaultValue('MigrateFileFid');
+    // Deal with alt and title, we will set them in $this->prepareRow()
+    if ($this->destinationFields[$field_name .':alt']) {
+      $this->addFieldMapping($field_name .':alt')->defaultValue('');
+      $this->addFieldMapping($field_name .':title')->defaultValue('');
+    }
+    // Deal with description and display if they exist, we will set them in $this->prepareRow()
+    if ($this->destinationFields[$field_name .':description']) {
+      $this->addFieldMapping($field_name .':description')->defaultValue('');
+      $this->addFieldMapping($field_name .':display')->defaultValue('');
+    }
+    // TODO Can files have a language in D6?
+    $this->addUnmigratedDestinations(array($field_language));
+
+  }
+
+
+  /**
+   * @param $query
+   * @param $table
+   * @param $field_name
+   * @param $field_field
+   */
+  protected function addTextFieldMapping(&$query, $table, $field_name, $field_field) {
+    // Value
+    $this->addFieldMapping($field_name, $field_field);
+    // Format
+    if (isset($destinationFields[$field_name .':format'])) {
+      if (Database::getConnection('default', $this->sourceConnection)
+        ->schema()
+        ->fieldExists($table, $field_name .'_format')) {
+        $query->fields($table, array($field_name .'_format'));
+        $this->addFieldMapping($field_name .':format', $field_name .'_format');
+      } else {
+        $this->addUnmigratedDestinations(array($field_name .':format'));
+      }
+    }
+    // Language @TODO
+    if (isset($destinationFields[$field_name .':language'])) {
+      $this->addUnmigratedDestinations(array($field_name .':language'));
+    }
+  }
 
   /**
    * Process uploads

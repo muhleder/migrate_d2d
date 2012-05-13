@@ -26,26 +26,26 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     parent::__construct($arguments);
   }
 
+  protected $vids = array();
 
   /**
    * Set up taxonomy mappings for the node
-   * @param $query
    */
-   protected function doTermMappings(&$query) {
+   protected function setVocabs() {
      // Get each vocabulary attached to this type.
-     $query = Database::getConnection('default', $this->sourceConnection)
+     $vocabQuery = Database::getConnection('default', $this->sourceConnection)
        ->select('vocabulary_node_types', 'vnt')
        ->fields('vnt', array('vid'));
-     $query->innerJoin('vocabulary', 'v', 'vnt.vid=v.vid');
-     $query->addField('v', 'name');
-     $query->condition('vnt.type', $this->sourceType);
-     $result = $query->execute();
-     foreach ($result as $row) {
-       $fields[$row->vid] = t('!label (Taxonomy Term)',
-         array('!label' => $row->name));
-       $this->sourceFieldTypes[$row->vid] = 'taxonomy_term';
+     $vocabQuery->innerJoin('vocabulary', 'v', 'vnt.vid=v.vid');
+     $vocabQuery->addField('v', 'name');
+     $vocabQuery->condition('vnt.type', $this->sourceType);
+     $result = $vocabQuery->execute();
+
+     foreach ($result as $vocab) {
+       $this->vids[] = $vocab->vid;
      }
    }
+
 
   /**
    * Set up field mappings for cck fields
@@ -97,14 +97,10 @@ class DrupalNode6Migration extends DrupalNodeMigration {
                 $this->addFieldMapping($field_name .':alt')->defaultValue('');
                 $this->addFieldMapping($field_name .':title')->defaultValue('');
               }
-              // Deal with description and display if they exist
+              // Deal with description and display if they exist, we will set them in $this->prepareRow()
               if ($destinationFields[$field_name .':description']) {
-                $query->fields($table, array(
-                  $field_name .'_description',
-                  $field_name .'_list',
-                ));
-                $this->addFieldMapping($field_name .':description', $field_name .'_description');
-                $this->addFieldMapping($field_name .':display', $field_name .'_list');
+                $this->addFieldMapping($field_name .':description')->defaultValue('');
+                $this->addFieldMapping($field_name .':display')->defaultValue('');
               }
               // TODO Can files have a language in D6?
               $this->addUnmigratedDestinations(array($field_language));
@@ -180,6 +176,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     $query->fields('nr', array('body', 'teaser', 'format'));
     $this->doFieldMappings($query);
     $this->doUploads($query);
+    $this->setVocabMap();
     return $query;
   }
 
@@ -236,16 +233,21 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       }
     }
 
+
+  }
+
+
+  public function prepare(&$node, $row) {
     // And. load up the data for taxonomy terms
     $query = Database::getConnection('default', $this->sourceConnection)
-             ->select('term_node', 'tn')
-             ->fields('tn', array('tid'))
-             ->condition('tn.vid', $row->vid);
+      ->select('term_node', 'tn')
+      ->fields('tn', array('tid'))
+      ->condition('tn.vid', $row->vid);
     $query->innerJoin('term_data', 'td', 'tn.tid=td.tid');
     $query->fields('td', array('vid'));
     $result = $query->execute();
-    foreach ($result as $term_row) {
-      $row->{$term_row->vid}[] = $term_row->tid;
+    foreach ($result as $term) {
+      $node->{'taxonomy_vocabulary_'. $term->vid}[] = $term->tid;
     }
   }
 

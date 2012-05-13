@@ -26,8 +26,12 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       'filefield' => 'fid', // @todo: Handle list and data suffixes
       'file' => 'fid',
       'nodereference' => 'nid',
+      'userreference' => 'uid',
     );
     parent::__construct($arguments);
+    $this->addFieldMapping('body:summary', 'teaser');
+    $this->addFieldMapping('body:format', 'format');
+    $this->addFieldMapping('body:language', 'language');
   }
 
 
@@ -109,6 +113,8 @@ class DrupalNode6Migration extends DrupalNodeMigration {
           case 'number_float':
           case 'date':
           case 'datestamp':
+          case 'nodereference':
+          case 'userreference':
             $this->addFieldMapping($field_name, $field_field);
             break;
           case 'link':

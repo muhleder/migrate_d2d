@@ -63,7 +63,10 @@ class DrupalNode6Migration extends DrupalNodeMigration {
    */
   protected function doFieldMappings(&$query) {
     $this->destinationFields = $this->destination->fields();
-    $field_info = field_info_field_by_ids();
+
+
+    // Prepare query for dealing with multiple rows if required
+    $query->groupBy('n.nid');
 
     // Load up field data for dynamically mapped fields
     foreach ($this->sourceFieldTypes as $field_name => $field_type) {
@@ -86,10 +89,9 @@ class DrupalNode6Migration extends DrupalNodeMigration {
         $query->fields($table, array($field_field));
 
         // Deal with multivalue fields
-        $field_instance = field_info_instance('node', $field_name, 'event');
-        $field = $field_info[$field_instance['field_id']];
-        if ($field['cardinality'] != 1) {
-          //$query->addExpression('GROUP_CONCAT(DISTINCT '. $table .'.'. $field_field .')', $field_field .'_list');
+
+        if ($this->getCardinality($field_name) != 1) {
+          $query->addExpression('GROUP_CONCAT(DISTINCT '. $table .'.'. $field_field .' SEPARATOR \'|\')', $field_field .'_list');
         }
 
         // Add field mappings, and select any data fields
@@ -117,7 +119,23 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     }
   }
 
+  /**
+   * Get the cardinality of a field
+   * @param $field_name
+   * @return mixed
+   */
+  protected function getCardinality($field_name) {
+    $field_info = field_info_field_by_ids();
+    $field_instance = field_info_instance('node', $field_name,  $this->sourceType);
+    return $field_info[$field_instance['field_id']]['cardinality'];
+  }
 
+  /**
+   * @param $query
+   * @param $table
+   * @param $field_name
+   * @param $field_field
+   */
   protected function addFileFieldMapping(&$query, $table, $field_name, $field_field) {
     $query->fields($table, array($field_name .'_data'));
     $this->addFieldMapping($field_name, $field_field);
@@ -135,7 +153,6 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     }
     // TODO Can files have a language in D6?
     $this->addUnmigratedDestinations(array($field_name .':language'));
-
   }
 
 

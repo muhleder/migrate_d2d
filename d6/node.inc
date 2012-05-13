@@ -47,6 +47,15 @@ class DrupalNode6Migration extends DrupalNodeMigration {
    }
 
 
+  protected function doTermMappings() {
+    foreach ($this->vids as $vid) {
+      $this->addFieldMapping('taxonomy_vocabulary_'. $vid)->defaultValue(array());
+      $this->addFieldMapping('taxonomy_vocabulary_'. $vid .':source_type')->defaultValue('tid');
+      $this->addFieldMapping('taxonomy_vocabulary_'. $vid .':create_term')->defaultValue(FALSE);
+    }
+  }
+
+
   /**
    * Set up field mappings for cck fields
    * @param $query
@@ -176,7 +185,8 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     $query->fields('nr', array('body', 'teaser', 'format'));
     $this->doFieldMappings($query);
     $this->doUploads($query);
-    $this->setVocabMap();
+    $this->setVocabs();
+    $this->doTermMappings();
     return $query;
   }
 

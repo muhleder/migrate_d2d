@@ -63,8 +63,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
    */
   protected function doFieldMappings(&$query) {
     $this->destinationFields = $this->destination->fields();
-    $node_info = entity_get_property_info('node');
-    $content_type_properties = $node_info['bundles'][$this->sourceType]['properties'];
+    $field_info = field_info_field_by_ids();
 
     // Load up field data for dynamically mapped fields
     foreach ($this->sourceFieldTypes as $field_name => $field_type) {
@@ -85,6 +84,13 @@ class DrupalNode6Migration extends DrupalNodeMigration {
         // Set up field names and select the field
         $field_field = $field_name .'_'. $this->fieldSuffixes[$field_type];
         $query->fields($table, array($field_field));
+
+        // Deal with multivalue fields
+        $field_instance = field_info_instance('node', $field_name, 'event');
+        $field = $field_info[$field_instance['field_id']];
+        if ($field['cardinality'] != 1) {
+          //$query->addExpression('GROUP_CONCAT(DISTINCT '. $table .'.'. $field_field .')', $field_field .'_list');
+        }
 
         // Add field mappings, and select any data fields
         switch($field_type) {
@@ -128,7 +134,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       $this->addFieldMapping($field_name .':display')->defaultValue('');
     }
     // TODO Can files have a language in D6?
-    $this->addUnmigratedDestinations(array($field_language));
+    $this->addUnmigratedDestinations(array($field_name .':language'));
 
   }
 
@@ -143,7 +149,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     // Value
     $this->addFieldMapping($field_name, $field_field);
     // Format
-    if (isset($destinationFields[$field_name .':format'])) {
+    if (isset($this->destinationFields[$field_name .':format'])) {
       if (Database::getConnection('default', $this->sourceConnection)
         ->schema()
         ->fieldExists($table, $field_name .'_format')) {
@@ -154,7 +160,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       }
     }
     // Language @TODO
-    if (isset($destinationFields[$field_name .':language'])) {
+    if (isset($this->destinationFields[$field_name .':language'])) {
       $this->addUnmigratedDestinations(array($field_name .':language'));
     }
   }

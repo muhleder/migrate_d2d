@@ -4,6 +4,11 @@
  * Handling specific to a Drupal 6 source for nodes.
  */
 class DrupalNode6Migration extends DrupalNodeMigration {
+
+  protected $vids = array();
+  protected $destinationFields = array();
+  protected $multipleFields = array();
+
   /**
    * @param array $arguments
    */
@@ -22,13 +27,9 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       'file' => 'fid',
       'nodereference' => 'nid',
     );
-
     parent::__construct($arguments);
   }
 
-  protected $vids = array();
-  protected $destinationFields = array();
-  protected $multipleFields = array();
 
   /**
    * Set up taxonomy mappings for the node
@@ -49,13 +50,13 @@ class DrupalNode6Migration extends DrupalNodeMigration {
    }
 
 
-  protected function doTermMappings() {
-    foreach ($this->vids as $vid) {
-      $this->addFieldMapping('taxonomy_vocabulary_'. $vid)->defaultValue(array());
-      $this->addFieldMapping('taxonomy_vocabulary_'. $vid .':source_type')->defaultValue('tid');
-      $this->addFieldMapping('taxonomy_vocabulary_'. $vid .':create_term')->defaultValue(FALSE);
+    protected function doTermMappings() {
+      foreach ($this->vids as $vid) {
+        $this->addFieldMapping('taxonomy_vocabulary_'. $vid)->defaultValue(array());
+        $this->addFieldMapping('taxonomy_vocabulary_'. $vid .':source_type')->defaultValue('tid');
+        $this->addFieldMapping('taxonomy_vocabulary_'. $vid .':create_term')->defaultValue(FALSE);
+      }
     }
-  }
 
 
   /**
@@ -64,7 +65,6 @@ class DrupalNode6Migration extends DrupalNodeMigration {
    */
   protected function doFieldMappings(&$query) {
     $this->destinationFields = $this->destination->fields();
-
 
     // Prepare query for dealing with multiple rows if required
     $query->groupBy('n.nid');
@@ -91,7 +91,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
 
         // Deal with multivalue fields
 
-        if ($this->getCardinality($field_name) != 1) {
+        if ($this->getCardinality($field_name, $field_field) != 1) {
           $query->addExpression('GROUP_CONCAT(DISTINCT '. $table .'.'. $field_field .' SEPARATOR \'|\')', $field_field .'_list');
         }
 
@@ -112,7 +112,6 @@ class DrupalNode6Migration extends DrupalNodeMigration {
             $this->addFieldMapping($field_name, $field_field);
             break;
           case 'link':
-
             break;
           default:
         }
@@ -120,20 +119,23 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     }
   }
 
+
   /**
    * Get the cardinality of a field
    * @param $field_name
+   * @param $field_field
    * @return mixed
    */
-  protected function getCardinality($field_name) {
+  protected function getCardinality($field_name, $field_field) {
     $field_info = field_info_field_by_ids();
     $field_instance = field_info_instance('node', $field_name,  $this->sourceType);
     $cardinality = $field_info[$field_instance['field_id']]['cardinality'];
     if ($cardinality !=1) {
-      $this->multipleFields[] = $field_name;
+      $this->multipleFields[$field_name] = $field_field;
     }
     return $cardinality;
   }
+
 
   /**
    * @param $query
@@ -187,6 +189,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     }
   }
 
+
   /**
    * Process uploads
    * @param $query
@@ -206,6 +209,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     $this->addFieldMapping('upload:display', 'list');
     $this->addUnmigratedDestinations(array('upload:language',));
   }
+
 
   /**
    * Query for basic node fields from Drupal 6.
@@ -227,6 +231,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     $this->doTermMappings();
     return $query;
   }
+
 
   /**
    * Retrieves the available fields for this content type from Drupal 6.
@@ -257,13 +262,22 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     return $fields;
   }
 
+
   /**
    * Called after the basic query data is fetched - we'll use this to populate
    * the source row with the CCK fields.
+   * @param $row
+   * @return mixed
    */
   public function prepareRow($row) {
     if (parent::prepareRow($row) === FALSE) {
       return FALSE;
+    }
+
+    foreach($this->multipleFields as $field_name => $field_field) {
+      if ($row->{$field_field .'_list'}) {
+        $row->{$field_field} = explode('|', $row->{$field_field .'_list'});
+      }
     }
 
     foreach($this->sourceFieldTypes as $field_name => $type) {
@@ -280,8 +294,6 @@ class DrupalNode6Migration extends DrupalNodeMigration {
         $row->{$field_name .'title'} = $data['title'];
       }
     }
-
-
   }
 
 
@@ -298,6 +310,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       $node->{'taxonomy_vocabulary_'. $term->vid}[] = $term->tid;
     }
   }
+
 
   /**
    * Translate the fid into the file path MigrateFileFieldHandler expects.

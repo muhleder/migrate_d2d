@@ -104,7 +104,7 @@ abstract class DrupalNodeMigration extends DrupalMigration {
     );
 
     // Setup common mappings
-    $this->addSimpleMappings(array('nid', 'title', 'status', 'created', 'changed',
+    $this->addSimpleMappings(array('nid', 'vid', 'title', 'status', 'created', 'changed',
       'comment', 'promote', 'sticky'));
 
     $this->addFieldMapping('language', 'language')

@@ -14,8 +14,10 @@ class DrupalMenuLinks6Migration extends DrupalMenuLinksMigration {
   public function __construct(array $arguments) {
     parent::__construct($arguments);
 
+    $this->systemOfRecord = Migration::DESTINATION;
+
     // Most mappings are straightforward
-    $this->addSimpleMappings(array('router_path', 'link_title',
+    $this->addSimpleMappings(array('mlid', 'router_path', 'link_title',
         'module', 'hidden', 'external', 'has_children',
         'expanded', 'weight', 'depth', 'customized', 'p1', 'p2', 'p3', 'p4',
         'p5', 'p6', 'p7', 'p8', 'p9', 'updated'));
@@ -61,6 +63,16 @@ class DrupalMenuLinks6Migration extends DrupalMenuLinksMigration {
              ->fields('m');
     return $query;
   }
+
+
+  // Make sure we keep the options for any existing links, options are problematic but no need to lose existing data
+  public function prepare($menu_link, $row) {
+     $existing_menu_link = menu_link_load($menu_link->mlid);
+    if ($existing_menu_link) {
+      $menu_link->options = $existing_menu_link['options'];
+    }
+  }
+
 
   /**
    * Review a data row after fetch, returning FALSE to skip it.

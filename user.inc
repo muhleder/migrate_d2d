@@ -35,8 +35,9 @@ abstract class DrupalUserMigration extends DrupalMigration {
     $this->addFieldMapping('data', 'data')
          ->callbacks('unserialize');
     // Dedupe username collisions by appending _1, _2, etc.
-    $this->addFieldMapping('name', 'name')
-         ->dedupe('users', 'name');
+    $this->addFieldMapping('name', 'name');
+         // @patched taken this out because it's deduping against itself
+         //->dedupe('users', 'name');
     $this->addFieldMapping('picture', 'picture')
          ->description(t('TODO: map picture fids'))
          ->issuePriority(MigrateFieldMapping::ISSUE_PRIORITY_MEDIUM);

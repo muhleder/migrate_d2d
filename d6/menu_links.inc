@@ -39,8 +39,7 @@ class DrupalMenuLinks6Migration extends DrupalMenuLinksMigration {
 
     // plid is taken from this migration. If the parent hasn't yet been migrated,
     // we need to create a stub.
-    $this->addFieldMapping('plid', 'plid')
-         ->sourceMigration($this->getMachineName());
+    $this->addFieldMapping('plid', 'plid');
 
     // @todo: What do we do if pathing changes? Can/Should we make this dependent on
     //   an implementation of MigratePathEntityHandler, if it exists?
@@ -94,6 +93,9 @@ class DrupalMenuLinks6Migration extends DrupalMenuLinksMigration {
       $row->menu_name = 'main-menu';
     }
 
+    if ($row->menu_name == 'secondary-links') {
+      $row->menu_name = 'secondary-menu';
+    }
     /*
      * Fun with link_path!
      *

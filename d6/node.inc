@@ -254,13 +254,14 @@ class DrupalNode6Migration extends DrupalNodeMigration {
   public function sourceFieldList() {
     migrate_instrument_start('DrupalNode6Migration::sourceFieldList');
     $fields = array();
+    $this->sourceFieldWidgets = array();
     $this->sourceFieldTypes = array();
 
     // Get each CCK field attached to this type.
     if (db_table_exists('content_node_field_instance')) {
       $query = Database::getConnection('default', $this->sourceConnection)
                ->select('content_node_field_instance', 'i')
-               ->fields('i', array('label'))
+               ->fields('i', array('label', 'widget_type'))
                ->condition('i.type_name', $this->sourceType);
       $query->innerJoin('content_node_field', 'f', 'i.field_name = f.field_name');
       $query->fields('f', array('field_name', 'type'));
@@ -268,6 +269,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       foreach ($result as $row) {
         $fields[trim($row->field_name)] = t('!label (!type)',
           array('!label' => $row->label, '!type' => $row->type));
+        $this->sourceFieldWidgets[$row->field_name] = $row->widget_type;
         $this->sourceFieldTypes[$row->field_name] = $row->type;
       }
     }
@@ -293,6 +295,14 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       }
     }
 
+    foreach($this->sourceFieldWidgets as $field_name => $widget_type) {
+      // Some widget types will need extra support
+      $method = "handle_widget_$widget_type";
+      if (method_exists($this, $method)) {
+        $this->$method($row, $field_name);
+      }
+    }
+
     foreach($this->sourceFieldTypes as $field_name => $type) {
       // Some fields will need translation (e.g., from a text string to a boolean)
       $method = "handle_$field_name";
@@ -300,11 +310,12 @@ class DrupalNode6Migration extends DrupalNodeMigration {
         // Pass by reference
         $this->$method($row->{$field_name .'_value'});
       }
-      // Set alt and title for filefields
+      // Set alt and title for filefields @TODO could move this into a handler for completeness
       if ($type == 'filefield' && $row->{$field_name .'_data'}) {
         $data = unserialize($row->{$field_name .'_data'});
-        $row->{$field_name .':alt'} = $data['alt'];
-        $row->{$field_name .'title'} = $data['title'];
+        foreach ($data as $datatype => $datavalue) {
+          $row->{$field_name .':'. $datatype} = $datavalue;
+        }
       }
     }
   }
@@ -339,4 +350,19 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       ->fetchField();
     return $filepath;
   }
+
+
+  /**
+   * Translate the fid into the file path MigrateFileFieldHandler expects.
+   * The path to the D6 instance must be passed in separately as source_path.
+   * @see MigrateFileFieldHandler::arguments()
+   */
+  public function handle_widget_imagefield_crop_widget($row, $field_name) {
+    $imagefield_crop_info = variable_get('imagefield_crop_info', array());
+    $data = unserialize($row->{$field_name .'_data'});
+    $imagefield_crop_info[$row->{$field_name .'_fid'}] = $data['crop'];
+    variable_set('imagefield_crop_info', $imagefield_crop_info);
+  }
+
+
 }

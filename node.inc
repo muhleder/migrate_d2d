@@ -38,6 +38,13 @@ abstract class DrupalNodeMigration extends DrupalMigration {
   protected $sourceFieldTypes = array();
 
   /**
+   * Mapping of each source CCK field to its widget type.
+   *
+   * @var array
+   */
+  protected $sourceFieldWidgets = array();
+
+  /**
    * Mapping of each source vocabulary id to the destination vocab machine name.
    *
    * @var array

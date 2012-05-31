@@ -32,12 +32,12 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     $this->addFieldMapping('body:summary', 'teaser');
     $this->addFieldMapping('body:format', 'format');
     $this->addFieldMapping('body:language', 'language');
-    // Highwater mark
+    /* Highwater mark
     $this->highwaterField = array(
       'name' => 'changed',
       'alias' => 'n',
       'type' => 'int',
-    );
+    );//*/
     $this->query->orderBy('changed');
   }
 

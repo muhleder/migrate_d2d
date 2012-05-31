@@ -322,7 +322,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
 
 
   public function prepare(&$node, $row) {
-    // And. load up the data for taxonomy terms
+    // And. load up the data for taxonomy terms @todo load this as a handler
     $query = Database::getConnection('default', $this->sourceConnection)
       ->select('term_node', 'tn')
       ->fields('tn', array('tid'))
@@ -331,7 +331,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     $query->fields('td', array('vid'));
     $result = $query->execute();
     foreach ($result as $term) {
-      $node->{'taxonomy_vocabulary_'. $term->vid}[] = $term->tid;
+      $node->{'taxonomy_vocabulary_'. $term->vid}['und'][] = array('tid' => $term->tid);
     }
   }
 

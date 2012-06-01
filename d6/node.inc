@@ -32,13 +32,13 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     $this->addFieldMapping('body:summary', 'teaser');
     $this->addFieldMapping('body:format', 'format');
     $this->addFieldMapping('body:language', 'language');
+
     /* Highwater mark
     $this->highwaterField = array(
       'name' => 'changed',
       'alias' => 'n',
       'type' => 'int',
     );//*/
-    $this->query->orderBy('changed');
   }
 
 
@@ -238,6 +238,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
              ->condition('type', $this->sourceType);
     $query->innerJoin('node_revisions', 'nr', 'n.vid=nr.vid');
     $query->fields('nr', array('body', 'teaser', 'format'));
+    $query->orderBy('changed');
     $this->doFieldMappings($query);
     $this->doUploads($query);
     $this->setVocabs();
@@ -300,6 +301,15 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       $method = "handle_widget_$widget_type";
       if (method_exists($this, $method)) {
         $this->$method($row, $field_name);
+      }
+    }
+
+    foreach($this->destinationFields as $field_name => $field_label) {
+      if ($format = $row->{$field_name .'_format'}) {
+        $method = "handle_format_$format";
+        if (method_exists($this, $method)) {
+          $this->$method($row->{$field_name .'_value'});
+        }
       }
     }
 

@@ -305,8 +305,8 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     }
 
     foreach($this->destinationFields as $field_name => $field_label) {
-      if ($format = $row->{$field_name .'_format'}) {
-        $method = "handle_format_$format";
+      if  (isset($row->{$field_name .'_format'})) {
+        $method = 'handle_format_'. $row->{$field_name .'_format'};
         if (method_exists($this, $method)) {
           $this->$method($row->{$field_name .'_value'});
         }
@@ -343,6 +343,9 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     foreach ($result as $term) {
       $node->{'taxonomy_vocabulary_'. $term->vid}['und'][] = array('tid' => $term->tid);
     }
+    // Remove menu object from node as this seems to break menus.
+    // Deletes hidden parent menu items if they are disabled.
+    if (isset($node->menu)) unset($node->menu);
   }
 
 

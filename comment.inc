@@ -66,7 +66,7 @@ abstract class DrupalCommentMigration extends DrupalMigration {
      *   -'changed'
      *   -'comment_body'
      */
-    $this->addSimpleMappings(array('pid', 'subject',
+    $this->addSimpleMappings(array('cid', 'pid', 'subject',
       'hostname', 'thread', 'name', 'mail', 'homepage'));
 
     $this->addFieldMapping('nid', 'nid')

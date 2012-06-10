@@ -70,7 +70,11 @@ abstract class DrupalUserMigration extends DrupalMigration {
     $query = Database::getConnection('default', $this->sourceConnection)
              ->select('users', 'u')
              ->fields('u')
-             ->condition('uid', 1, '>');
+             ->condition('u.uid', 1, '>');
+    $query->leftJoin('users_roles', 'ur', 'ur.uid=u.uid');
+    $query->fields('ur', array('rid'));
+    $query->addExpression('GROUP_CONCAT(DISTINCT ur.rid SEPARATOR \'|\')', 'role_list');
+    $query->groupBy('uid');
     return $query;
   }
 

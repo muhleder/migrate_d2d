@@ -346,6 +346,16 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     // Remove menu object from node as this seems to break menus.
     // Deletes hidden parent menu items if they are disabled.
     if (isset($node->menu)) unset($node->menu);
+
+    if (module_exists('path') && isset($node->path)) {
+      $node->path['pid'] = db_select('url_alias')
+        ->condition('source', 'node/'. $node->nid, '=')
+        ->fields('url_alias', array('pid'))
+        ->execute()
+        ->fetchField(0);
+    }
+
+
   }
 
 

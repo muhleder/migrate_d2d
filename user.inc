@@ -130,6 +130,11 @@ abstract class DrupalUserMigration extends DrupalMigration {
         $path = array(
           'source' => 'user/' . $account->uid,
           'alias' => $account->path['alias'],
+          'pid' => db_select('url_alias')
+                      ->condition('source', 'user/'. $account->uid, '=')
+                      ->fields('url_alias', array('pid'))
+                      ->execute()
+                      ->fetchField(0),
         );
         migrate_instrument_start('path_save');
         path_save($path);

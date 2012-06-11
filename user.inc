@@ -74,7 +74,7 @@ abstract class DrupalUserMigration extends DrupalMigration {
     $query->leftJoin('users_roles', 'ur', 'ur.uid=u.uid');
     $query->fields('ur', array('rid'));
     $query->addExpression('GROUP_CONCAT(DISTINCT ur.rid SEPARATOR \'|\')', 'role_list');
-    $query->groupBy('uid');
+    $query->groupBy('u.uid');
     return $query;
   }
 

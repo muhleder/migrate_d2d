@@ -343,6 +343,23 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     foreach ($result as $term) {
       $node->{'taxonomy_vocabulary_'. $term->vid}['und'][] = array('tid' => $term->tid);
     }
+
+    // Set is_new on the $node object, we will always have a nid in our case
+    $result = db_query("SELECT nid, vid FROM {node} WHERE nid = " . $row->nid)->fetch();
+    $node->is_new = !($result->nid);
+
+    // Remove any previously entered fields and data
+    if ($node->is_new) {
+      $info = field_info_fields();
+      foreach ($info as $field) {
+        $storage = $field['storage']['details']['sql']['FIELD_LOAD_CURRENT'];
+        foreach ($storage as $table => $key) {
+          db_query("DELETE FROM $table WHERE entity_id = {$row->nid}");
+        }
+      }
+      db_query("DELETE FROM node_access WHERE nid = {$row->nid}");
+    }
+
     // Remove menu object from node as this seems to break menus.
     // Deletes hidden parent menu items if they are disabled.
     if (isset($node->menu)) unset($node->menu);

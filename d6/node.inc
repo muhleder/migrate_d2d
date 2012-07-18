@@ -370,6 +370,8 @@ class DrupalNode6Migration extends DrupalNodeMigration {
         ->fields('url_alias', array('pid'))
         ->execute()
         ->fetchField(0);
+      // Need to set the node language so that the path gets the correct language. @see path_node_update().
+      $node->language = LANGUAGE_NONE;
     }
 
 

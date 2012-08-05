@@ -48,5 +48,10 @@ class DrupalComment6Migration extends DrupalCommentMigration {
     if (parent::prepareRow($row) === FALSE) {
       return FALSE;
     }
+    // We need to have a row in the comment table for a comment to be written by Drupal's write_record api in comment_save.
+    $original = comment_load($row->cid);
+    if (!$original) {
+      db_query("INSERT INTO comment (cid, thread) VALUES (:cid, '01/')", array(':cid' => $row->cid));
+    }
   }
 }

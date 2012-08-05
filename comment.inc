@@ -66,7 +66,7 @@ abstract class DrupalCommentMigration extends DrupalMigration {
      *   -'changed'
      *   -'comment_body'
      */
-    $this->addSimpleMappings(array('cid', 'pid', 'subject',
+    $this->addSimpleMappings(array('pid', 'subject',
       'hostname', 'thread', 'name', 'mail', 'homepage'));
 
     $this->addFieldMapping('nid', 'nid')
@@ -76,7 +76,7 @@ abstract class DrupalCommentMigration extends DrupalMigration {
       $default_uid = $arguments['default_uid'];
     }
     else {
-      $default_uid = 1;
+      $default_uid = 0;
     }
     if (isset($user_migration)) {
       $this->addFieldMapping('uid', 'uid')

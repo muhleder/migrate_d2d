@@ -374,7 +374,16 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       $node->language = LANGUAGE_NONE;
     }
 
-
+    // Add xml sitemap support
+    $query = Database::getConnection('default', $this->sourceConnection)
+      ->select('xmlsitemap', 'x')
+      ->fields('x');
+    $query->condition('id', $row->nid);
+    $query->condition('type', 'node');
+    $result = $query->execute();
+    $xmlsitemap = $result->fetchObject();
+    $xmlsitemap->language = $xmlsitemap->language ? $xmlsitemap->language : LANGUAGE_NONE;
+    drupal_write_record('xmlsitemap', $xmlsitemap, array('id') );
   }
 
 

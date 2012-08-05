@@ -215,7 +215,8 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       'list',
       'weight',
     ));
-    $this->addFieldMapping('upload', 'fid');
+    $query->addExpression('GROUP_CONCAT(DISTINCT u.fid SEPARATOR \'|\')', 'fid_list');
+    $this->addFieldMapping('upload', 'fid_list');
     $this->addFieldMapping('upload:file_class')
       ->defaultValue('MigrateFileFid');
     $this->addFieldMapping('upload:description', 'description');
@@ -372,6 +373,21 @@ class DrupalNode6Migration extends DrupalNodeMigration {
         ->fetchField(0);
       // Need to set the node language so that the path gets the correct language. @see path_node_update().
       $node->language = LANGUAGE_NONE;
+    }
+
+    // Redo file attachment support so we can add multiple items.
+    $query = Database::getConnection('default', $this->sourceConnection)
+      ->select('upload', 'u')
+      ->fields('u');
+    $query->condition('vid', $row->vid);
+    $files = $query->execute();
+    $node->upload['und'] = array();
+    foreach ($files as $file) {
+      $node->upload['und'][] = array(
+        'fid' => $file->fid,
+        'description' => $file->description,
+        'display' => 1,
+      );
     }
 
     // Add xml sitemap support

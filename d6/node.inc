@@ -399,7 +399,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     $result = $query->execute();
     $xmlsitemap = $result->fetchObject();
     $xmlsitemap->language = $xmlsitemap->language ? $xmlsitemap->language : LANGUAGE_NONE;
-    drupal_write_record('xmlsitemap', $xmlsitemap, array('id') );
+    drupal_write_record('xmlsitemap', $xmlsitemap, array('id', 'type') );
   }
 
 

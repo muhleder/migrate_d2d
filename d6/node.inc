@@ -161,6 +161,12 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     $this->addFieldMapping($field_name, $field_field);
     $this->addFieldMapping($field_name.':file_class')
       ->defaultValue('MigrateFileFid');
+
+    // Deal with data from multi value fields, , we will set them in $this->prepare()
+    if ($this->getCardinality($field_name, $field_field) != 1) {
+      $query->addExpression('GROUP_CONCAT(DISTINCT '. $table .'.'. $field_name . '_data SEPARATOR \'|\')', $field_name .'_data_list');
+    }
+
     // Deal with alt and title, we will set them in $this->prepareRow()
     if ($this->destinationFields[$field_name .':alt']) {
       $this->addFieldMapping($field_name .':alt')->defaultValue('');
@@ -389,6 +395,20 @@ class DrupalNode6Migration extends DrupalNodeMigration {
         'display' => 1,
       );
     }
+
+    // Data for multivalue file fields
+    foreach($this->multipleFields as $field_name => $field_field) {
+      if ($row->{$field_name .'_data_list'}) {
+        $datum = explode('|', $row->{$field_name .'_data_list'});
+        $i = 0;
+        foreach ($datum as $data_serialized) {
+          $data = unserialize($data_serialized);
+          $node->{$field_name}['und'][$i] = array_merge($node->{$field_name}['und'][$i], $data);
+          $i++;
+        }
+      }
+    }
+
 
     // Add xml sitemap support
     $query = Database::getConnection('default', $this->sourceConnection)

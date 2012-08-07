@@ -169,8 +169,8 @@ class DrupalNode6Migration extends DrupalNodeMigration {
 
     // Deal with alt and title, we will set them in $this->prepareRow()
     if ($this->destinationFields[$field_name .':alt']) {
-      $this->addFieldMapping($field_name .':alt')->defaultValue('');
-      $this->addFieldMapping($field_name .':title')->defaultValue('');
+      $this->addFieldMapping($field_name .':alt', $field_name . '_alt');
+      $this->addFieldMapping($field_name .':title', $field_name . '_title');
     }
     // Deal with description and display if they exist, we will set them in $this->prepareRow()
     if ($this->destinationFields[$field_name .':description']) {
@@ -331,7 +331,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
       if ($type == 'filefield' && $row->{$field_name .'_data'}) {
         $data = unserialize($row->{$field_name .'_data'});
         foreach ($data as $datatype => $datavalue) {
-          $row->{$field_name .':'. $datatype} = $datavalue;
+          $row->{$field_name .'_'. $datatype} = $datavalue;
         }
       }
     }

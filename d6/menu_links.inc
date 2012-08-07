@@ -18,7 +18,7 @@ class DrupalMenuLinks6Migration extends DrupalMenuLinksMigration {
 
     // Most mappings are straightforward
     $this->addSimpleMappings(array('mlid', 'router_path', 'link_title',
-        'module', 'hidden', 'external', 'has_children',
+        'module', 'hidden', 'external', 'has_children', 'options',
         'expanded', 'weight', 'depth', 'customized', 'p1', 'p2', 'p3', 'p4',
         'p5', 'p6', 'p7', 'p8', 'p9', 'updated'));
 
@@ -47,8 +47,8 @@ class DrupalMenuLinks6Migration extends DrupalMenuLinksMigration {
     $this->addFieldMapping('link_path', 'link_path');
 
     // Ran into trouble with options, so I'm leaving it out for now
-    $this->addUnmigratedSources(array('options'));
-    $this->addUnmigratedDestinations(array('options'));
+    //$this->addUnmigratedSources(array('options'));
+    //$this->addUnmigratedDestinations(array('options'));
   }
 
   /**
@@ -66,10 +66,6 @@ class DrupalMenuLinks6Migration extends DrupalMenuLinksMigration {
 
   // Make sure we keep the options for any existing links, options are problematic but no need to lose existing data
   public function prepare($menu_link, $row) {
-     $existing_menu_link = menu_link_load($menu_link->mlid);
-    if ($existing_menu_link) {
-      $menu_link->options = $existing_menu_link['options'];
-    }
   }
 
 
@@ -96,7 +92,11 @@ class DrupalMenuLinks6Migration extends DrupalMenuLinksMigration {
     if ($row->menu_name == 'secondary-links') {
       $row->menu_name = 'secondary-menu';
     }
+
+    $row->options = unserialize($row->options);
+
     /*
+     *
      * Fun with link_path!
      *
      * check for nids

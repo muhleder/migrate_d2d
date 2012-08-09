@@ -118,11 +118,14 @@ class DrupalNode6Migration extends DrupalNodeMigration {
           case 'number_decimal':
           case 'number_integer':
           case 'number_float':
-          case 'date':
-          case 'datestamp':
           case 'nodereference':
           case 'userreference':
             $this->addFieldMapping($field_name, $field_field);
+            break;
+          case 'date':
+          case 'datestamp':
+            $arguments = array('timezone' => 'Europe/London');
+            $this->addFieldMapping($field_name, $field_field)->arguments($arguments);
             break;
           case 'link':
             break;
@@ -175,7 +178,7 @@ class DrupalNode6Migration extends DrupalNodeMigration {
     // Deal with description and display if they exist, we will set them in $this->prepareRow()
     if ($this->destinationFields[$field_name .':description']) {
       $this->addFieldMapping($field_name .':description')->defaultValue('');
-      $this->addFieldMapping($field_name .':display')->defaultValue('');
+      $this->addFieldMapping($field_name .':display')->defaultValue(1);
     }
     // TODO Can files have a language in D6?
     $this->addUnmigratedDestinations(array($field_name .':language'));
